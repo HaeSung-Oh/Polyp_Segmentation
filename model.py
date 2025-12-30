@@ -110,7 +110,7 @@ class GLAM(nn.Module):
 
         context_enhanced = fused_feat
 
-        return self.final_conv(context_enhanced) + x
+        return self.final_conv(context_enhanced)
 
 
 class EfficientNetEncoder(nn.Module):
@@ -209,12 +209,12 @@ class DecoderBlock(nn.Module):
 
     def forward(self, x, skip):  # skip: e0
         x = self.upconv(x)
+        
+        skip_post = self.context_module(skip) + skip
+        if skip_post.shape[2:] != x.shape[2:]:
+            skip_post = F.interpolate(skip_post, size=x.shape[2:], mode='bilinear', align_corners=True)
 
-        skip = self.context_module(skip)
-        if skip.shape[2:] != x.shape[2:]:
-            skip = F.interpolate(skip, size=x.shape[2:], mode='bilinear', align_corners=True)
-
-        x = torch.cat([x, skip], dim=1)
+        x = torch.cat([x, skip_post], dim=1)
         x = self.post_fusion(x)
 
         return x
@@ -243,7 +243,7 @@ class model(nn.Module):
         input_size = x.shape[2:]
 
         e0, e1, e2, e3, e4 = self.encoder(x)
-        g = self.global_context(e4)
+        g = self.global_context(e4) + e4
 
         # skip e1, e0
         d1 = self.decoder1(g, e0)
