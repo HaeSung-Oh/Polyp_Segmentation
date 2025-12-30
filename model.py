@@ -110,7 +110,7 @@ class GLAM(nn.Module):
 
         context_enhanced = fused_feat
 
-        return self.final_conv(context_enhanced)
+        return self.final_conv(context_enhanced) + x
 
 
 class EfficientNetEncoder(nn.Module):
